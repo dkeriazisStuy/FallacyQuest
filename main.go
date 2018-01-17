@@ -20,19 +20,21 @@ const (
 	radioScale   = 2
 	radioSpace   = 30
 	radioSize    = 10
+	origX        = 1024.0
+	origY        = 768.0
 )
 
 var background = colornames.Firebrick
 
 var cfg = pixelgl.WindowConfig{
 	Title:     "Fallacy Quest",
-	Bounds:    pixel.R(0, 0, winX, winY),
+	Bounds:    pixel.R(0, 0, origX, origY),
 	VSync:     true,
 	Resizable: true,
 }
 
-var winX = 1024.0
-var winY = 768.0
+var winX = origX
+var winY = origY
 
 type fallacyProps struct {
 	fullName string
@@ -152,7 +154,7 @@ func (f *fallacy) calcTexts() {
 			newLine = true
 		}
 		fmt.Fprint(txt, phrase)
-		if lineX+txt.Bounds().W() >= f.win.Bounds().W()/2-200 {
+		if lineX+txt.Bounds().W() >= f.win.Bounds().W()/2-winX*200/origX {
 			newLine = true
 		}
 		if newLine {
@@ -325,10 +327,10 @@ func (c *choice) setCenter(centerX float64, centerY float64) {
 
 func (c *choice) calcChoice() {
 	for i := range c.buttons {
-		deltaY := radioSpace * ((float64(len(c.buttons)-1))/2 - float64(i))
+		deltaY := winY * radioSpace / origY * ((float64(len(c.buttons) - 1))/2 - float64(i))
 		center := pixel.V(c.centerX, c.centerY+deltaY)
 		c.buttons[i].deltaY = deltaY
-		b := newButton(c.win, pixel.R(center.X-radioSize, center.Y-radioSize, center.X+radioSize, center.Y+radioSize), color.Transparent, color.Transparent)
+		b := newButton(c.win, pixel.R(center.X-winX*radioSize/origX, center.Y-winY*radioSize/origY, center.X+winX*radioSize/origX, center.Y+winY*radioSize/origY), color.Transparent, color.Transparent)
 		c.buttons[i].b = b
 	}
 }
@@ -364,13 +366,13 @@ func (c *choice) draw() {
 		}
 		center := pixel.V(c.centerX, c.centerY+c.buttons[i].deltaY)
 		im.Push(center)
-		im.Circle(radioSize, 0)
+		im.Circle(winY*radioSize/origY, 0)
 		im.Color = colornames.Gray
 		im.Push(center)
-		im.Circle(radioSize, 3)
+		im.Circle(winY*radioSize/origY, 3)
 		txt := text.New(pixel.ZV, atlas)
 		fmt.Fprint(txt, c.buttons[i].display)
-		txt.Draw(c.win, pixel.IM.Scaled(txt.Bounds().Center(), radioScale).Moved(center.Add(pixel.V(txt.Bounds().W()*radioScale/2+radioSize+10, 0)).Sub(txt.Bounds().Center())))
+		txt.Draw(c.win, pixel.IM.ScaledXY(txt.Bounds().Center(), pixel.V(winX*radioScale/origX, winY*radioScale/origY)).Moved(center.Add(pixel.V(txt.Bounds().W()*winX*(radioScale/2)/origX+winX*(radioSize+10)/origX, 0)).Sub(txt.Bounds().Center())))
 	}
 	im.Draw(c.win)
 }
@@ -421,39 +423,40 @@ resize:
 	fmt.Fprint(titleTxt, "Fallacy Quest")
 	// Start
 	startPos := pixel.V(r.W()/2, 6*r.H()/11)
-	startButton := newButton(win, pixel.R(startPos.X-100, startPos.Y-50, startPos.X+100, startPos.Y+50), colornames.Sandybrown, colornames.Rosybrown)
+	startButton := newButton(win, pixel.R(startPos.X-winX*100/origX, startPos.Y-winY*50/origY, startPos.X+winX*100/origX, startPos.Y+winY*50/origY), colornames.Sandybrown, colornames.Rosybrown)
 	startTxt := text.New(pixel.ZV, atlas)
 	fmt.Fprint(startTxt, "Start")
 	// Tutorial
 	tutorialPos := pixel.V(r.W()/2, 4*r.H()/11)
-	tutorialButton := newButton(win, pixel.R(tutorialPos.X-100, tutorialPos.Y-50, tutorialPos.X+100, tutorialPos.Y+50), colornames.Sandybrown, colornames.Rosybrown)
+	tutorialButton := newButton(win, pixel.R(tutorialPos.X-winX*100/origX, tutorialPos.Y-winY*50/origY, tutorialPos.X+winX*100/origX, tutorialPos.Y+winY*50/origY), colornames.Sandybrown, colornames.Rosybrown)
 	tutorialTxt := text.New(pixel.ZV, atlas)
 	fmt.Fprint(tutorialTxt, "Tutorial")
 	// Quit
 	quitPos := pixel.V(r.W()/2, 2*r.H()/11)
-	quitButton := newButton(win, pixel.R(quitPos.X-100, quitPos.Y-50, quitPos.X+100, quitPos.Y+50), colornames.Sandybrown, colornames.Rosybrown)
+	quitButton := newButton(win, pixel.R(quitPos.X-winX*100/origX, quitPos.Y-winY*50/origY, quitPos.X+winX*100/origX, quitPos.Y+winY*50/origY), colornames.Sandybrown, colornames.Rosybrown)
 	quitTxt := text.New(pixel.ZV, atlas)
 	fmt.Fprint(quitTxt, "Quit")
 	for !win.Closed() {
 		win.Clear(background)
 		// Title Draw
-		titleTxt.Draw(win, pixel.IM.Scaled(titleTxt.Bounds().Center(), 5).Moved(titlePos.Sub(titleTxt.Bounds().Center())))
+		titleTxt.Draw(win, pixel.IM.ScaledXY(titleTxt.Bounds().Center(), pixel.V(winX*5/origX, winY*5/origY)).Moved(titlePos.Sub(titleTxt.Bounds().Center())))
 		// Start Check
 		if startButton.check() {
 			start(win, false)
 			goto resize
 		}
-		startTxt.Draw(win, pixel.IM.Scaled(startTxt.Bounds().Center(), 3).Moved(startPos.Sub(startTxt.Bounds().Center())))
+		startTxt.Draw(win, pixel.IM.ScaledXY(startTxt.Bounds().Center(), pixel.V(winX*3/origX, winY*3/origY)).Moved(startPos.Sub(startTxt.Bounds().Center())))
 		// Tutorial Check
 		if tutorialButton.check() {
 			start(win, true)
+			goto resize
 		}
-		tutorialTxt.Draw(win, pixel.IM.Scaled(tutorialTxt.Bounds().Center(), 3).Moved(tutorialPos.Sub(tutorialTxt.Bounds().Center())))
+		tutorialTxt.Draw(win, pixel.IM.ScaledXY(tutorialTxt.Bounds().Center(), pixel.V(winX*3/origX, winY*3/origY)).Moved(tutorialPos.Sub(tutorialTxt.Bounds().Center())))
 		// Quit Check
 		if quitButton.check() {
 			return
 		}
-		quitTxt.Draw(win, pixel.IM.Scaled(quitTxt.Bounds().Center(), 3).Moved(quitPos.Sub(quitTxt.Bounds().Center())))
+		quitTxt.Draw(win, pixel.IM.ScaledXY(quitTxt.Bounds().Center(), pixel.V(winX*3/origX, winY*3/origY)).Moved(quitPos.Sub(quitTxt.Bounds().Center())))
 		win.Update()
 		if resized(win) {
 			goto resize
@@ -496,17 +499,17 @@ resize:
 	f.calcTexts()
 	r := win.Bounds()
 	// Back Button
-	back := newButton(win, pixel.R(r.Min.X, r.Max.Y-100, r.Min.X+100, r.Max.Y), colornames.Sandybrown, colornames.Rosybrown)
+	back := newButton(win, pixel.R(r.Min.X, r.Max.Y-winY*100/origY, r.Min.X+winX*100/origX, r.Max.Y), colornames.Sandybrown, colornames.Rosybrown)
 	backIcon := imdraw.New(nil)
-	backIcon.Push(pixel.V(r.Min.X+10, r.Max.Y-50), pixel.V(r.Min.X+90, r.Max.Y-10), pixel.V(r.Min.X+90, r.Max.Y-90))
+	backIcon.Push(pixel.V(r.Min.X+winX*10/origX, r.Max.Y-winY*50/origY), pixel.V(r.Min.X+winX*90/origX, r.Max.Y-winY*10/origY), pixel.V(r.Min.X+winX*90/origX, r.Max.Y-winY*90/origY))
 	backIcon.Polygon(0)
 	// Check Button
-	check := newButton(win, pixel.R(winX/2-210, winY/4-50, winX/2-10, winY/4+50), colornames.Green, colornames.Darkgreen)
+	check := newButton(win, pixel.R(winX/2-winX*210/origX, winY/4-winY*50/origY, winX/2-winX*10/origX, winY/4+winY*50/origY), colornames.Green, colornames.Darkgreen)
 	checkTxt := text.New(pixel.ZV, atlas)
 	checkTxt.Clear()
 	fmt.Fprint(checkTxt, "Check")
 	// Skip Button
-	skip := newButton(win, pixel.R(winX/2+10, winY/4-50, winX/2+210, winY/4+50), colornames.Red, colornames.Darkred)
+	skip := newButton(win, pixel.R(winX/2+winX*10/origX, winY/4-winY*50/origY, winX/2+winX*210/origX, winY/4+winY*50/origY), colornames.Red, colornames.Darkred)
 	skipTxt := text.New(pixel.ZV, atlas)
 	skipTxt.Clear()
 	fmt.Fprint(skipTxt, "Skip")
@@ -522,7 +525,7 @@ resize:
 	// Tutorial Text
 	tutTxt := text.New(pixel.ZV, atlas)
 	tutTxt.Color = colornames.Black
-	tutNext := newButton(win, pixel.R(winX/2-60, 10.5*winY/17-25, winX/2+60, 10.5*winY/17+25), colornames.Blue, colornames.Darkblue)
+	tutNext := newButton(win, pixel.R(winX/2-winX*60/origX, 10.5*winY/17-winY*25/origY, winX/2+winX*60/origX, 10.5*winY/17+winY*25/origY), colornames.Blue, colornames.Darkblue)
 	tutNextTxt := text.New(pixel.ZV, atlas)
 	tutNextTxt.Color = colornames.Green
 	fmt.Fprint(tutNextTxt, "Next ->")
@@ -584,7 +587,7 @@ resize:
 				fmt.Fprintf(scoreTxt, "Score: %.2f", score)
 			}
 		}
-		checkTxt.Draw(win, pixel.IM.Scaled(checkTxt.Bounds().Center(), 3).Moved(check.rect.Center().Sub(checkTxt.Bounds().Center())))
+		checkTxt.Draw(win, pixel.IM.ScaledXY(checkTxt.Bounds().Center(), pixel.V(winX*3/origX, winY*3/origY)).Moved(check.rect.Center().Sub(checkTxt.Bounds().Center())))
 		// Skip
 		if skip.check() {
 			if correct {
@@ -605,11 +608,11 @@ resize:
 			}
 			goto reload
 		}
-		skipTxt.Draw(win, pixel.IM.Scaled(skipTxt.Bounds().Center(), 3).Moved(skip.rect.Center().Sub(skipTxt.Bounds().Center())))
+		skipTxt.Draw(win, pixel.IM.ScaledXY(skipTxt.Bounds().Center(), pixel.V(winX*3/origX, winY*3/origY)).Moved(skip.rect.Center().Sub(skipTxt.Bounds().Center())))
 		// Progress
-		progressTxt.Draw(win, pixel.IM.Scaled(progressTxt.Bounds().Center(), 3).Moved(pixel.V(winX/2, 10*winY/11).Sub(progressTxt.Bounds().Center())))
+		progressTxt.Draw(win, pixel.IM.ScaledXY(progressTxt.Bounds().Center(), pixel.V(winX*3/origX, winY*3/origY)).Moved(pixel.V(winX/2, 10*winY/11).Sub(progressTxt.Bounds().Center())))
 		// Score
-		scoreTxt.Draw(win, pixel.IM.Scaled(scoreTxt.Bounds().Center(), 3).Moved(pixel.V(winX/2, winY/9).Sub(scoreTxt.Bounds().Center())))
+		scoreTxt.Draw(win, pixel.IM.ScaledXY(scoreTxt.Bounds().Center(), pixel.V(winX*3/origX, winY*3/origY)).Moved(pixel.V(winX/2, winY/9).Sub(scoreTxt.Bounds().Center())))
 		// Back
 		if back.check() {
 			return
@@ -624,7 +627,7 @@ resize:
 				tutStep += 1
 			}
 			if tutStep <= 45 {
-				tutNextTxt.Draw(win, pixel.IM.Scaled(tutNextTxt.Bounds().Center(), 2).Moved(tutNext.rect.Center().Sub(tutNextTxt.Bounds().Center())))
+				tutNextTxt.Draw(win, pixel.IM.ScaledXY(tutNextTxt.Bounds().Center(), pixel.V(winX*2/origX, winY*2/origY)).Moved(tutNext.rect.Center().Sub(tutNextTxt.Bounds().Center())))
 			}
 			tutTxt.Clear()
 			switch tutStep {
@@ -766,7 +769,7 @@ resize:
 			case 45:
 				fmt.Fprint(tutTxt, "Division (3): The original, and the two resultants")
 			}
-			tutTxt.Draw(win, pixel.IM.Scaled(tutTxt.Bounds().Center(), 2).Moved(pixel.V(winX/2, 11.5*winY/17).Sub(tutTxt.Bounds().Center())))
+			tutTxt.Draw(win, pixel.IM.ScaledXY(tutTxt.Bounds().Center(), pixel.V(winX*2/origX, winY*2/origY)).Moved(pixel.V(winX/2, 11.5*winY/17).Sub(tutTxt.Bounds().Center())))
 		}
 		// Update
 		win.Update()
@@ -786,29 +789,29 @@ resize:
 	scoreTxt := text.New(pixel.ZV, atlas)
 	fmt.Fprintf(scoreTxt, "Score: %.2f", score)
 	// Menu Button
-	menu := newButton(win, pixel.R(winX/2-winX*210/1024, winY/5-winY*50/768, winX/2-winX*10/1024, winY/5+winY*50/768), colornames.Sandybrown, colornames.Rosybrown)
+	menu := newButton(win, pixel.R(winX/2-winX*210/origX, winY/5-winY*50/origY, winX/2-winX*10/origX, winY/5+winY*50/origY), colornames.Sandybrown, colornames.Rosybrown)
 	menuTxt := text.New(pixel.ZV, atlas)
 	fmt.Fprint(menuTxt, "Menu")
 	// Replay
-	replay := newButton(win, pixel.R(winX/2+winX*10/1024, winY/5-winY*50/768, winX/2+winX*210/1024, winY/5+winY*50/768), colornames.Green, colornames.Darkgreen)
+	replay := newButton(win, pixel.R(winX/2+winX*10/origX, winY/5-winY*50/origY, winX/2+winX*210/origX, winY/5+winY*50/origY), colornames.Green, colornames.Darkgreen)
 	replayTxt := text.New(pixel.ZV, atlas)
 	fmt.Fprint(replayTxt, "Replay")
 	for !win.Closed() {
 		win.Clear(background)
 		// Congrats
-		congratsTxt.Draw(win, pixel.IM.Scaled(congratsTxt.Bounds().Center(), 5).Moved(pixel.V(winX/2, 4*winY/5).Sub(congratsTxt.Bounds().Center())))
+		congratsTxt.Draw(win, pixel.IM.ScaledXY(congratsTxt.Bounds().Center(), pixel.V(winX*5/origX, winY*5/origY)).Moved(pixel.V(winX/2, 4*winY/5).Sub(congratsTxt.Bounds().Center())))
 		// Score
-		scoreTxt.Draw(win, pixel.IM.Scaled(scoreTxt.Bounds().Center(), 5).Moved(pixel.V(winX/2, 3*winY/5).Sub(scoreTxt.Bounds().Center())))
+		scoreTxt.Draw(win, pixel.IM.ScaledXY(scoreTxt.Bounds().Center(), pixel.V(winX*5/origX, winY*5/origY)).Moved(pixel.V(winX/2, 3*winY/5).Sub(scoreTxt.Bounds().Center())))
 		// Menu
 		if menu.check() {
 			return false
 		}
-		menuTxt.Draw(win, pixel.IM.Scaled(menuTxt.Bounds().Center(), 3).Moved(menu.rect.Center().Sub(menuTxt.Bounds().Center())))
+		menuTxt.Draw(win, pixel.IM.ScaledXY(menuTxt.Bounds().Center(), pixel.V(winX*3/origX, winY*3/origY)).Moved(menu.rect.Center().Sub(menuTxt.Bounds().Center())))
 		// Replay
 		if replay.check() {
 			return true
 		}
-		replayTxt.Draw(win, pixel.IM.Scaled(replayTxt.Bounds().Center(), 3).Moved(replay.rect.Center().Sub(replayTxt.Bounds().Center())))
+		replayTxt.Draw(win, pixel.IM.ScaledXY(replayTxt.Bounds().Center(), pixel.V(winX*3/origX, winY*3/origY)).Moved(replay.rect.Center().Sub(replayTxt.Bounds().Center())))
 		win.Update()
 		if resized(win) {
 			goto resize
